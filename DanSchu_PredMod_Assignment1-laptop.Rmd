@@ -1,0 +1,219 @@
+---
+title: "DanSchu_PredMod_Assignment1"
+author: "Dan Schumacher"
+date: "2024-01-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+
+```
+
+### Question 8
+
+```{r}
+
+##### AAAAA #####
+
+df_college <- 
+  read.csv(
+    '../data/College.csv'
+    )
+
+##### BBBBB #####
+# Rename rows
+rownames(df_college) <- df_college[, 1]
+# get rid of redundant column
+df_college <- df_college[,-1]
+# Check it out
+View(df_college)
+
+##### CCCCC #####
+# i
+summary(df_college)
+
+# ii
+pairs(df_college[,2:12])
+
+# iii
+plot(
+  df_college$Outstate ~ as.factor(df_college$Private)
+)
+
+# iv
+Elite <- rep ("No", nrow (df_college))
+Elite[df_college$Top10perc > 50] <- " Yes "
+Elite <- as.factor (Elite)
+df_college <- data.frame (df_college , Elite)
+summary(
+  df_college$Elite
+)
+plot(
+  df_college$Outstate ~ as.factor(df_college$Elite)
+)
+
+# v
+par(
+  mfrow = c(2,2)
+)
+hist(df_college$Outstate, breaks=50)
+hist(df_college$Enroll, breaks=15)
+
+# vi discover on your own and report your findings. 
+df_college %>% 
+  filter(
+    Elite == " Yes "
+  ) %>% 
+  arrange(
+    desc(Outstate)
+  )
+
+# The top 5 most expensive out of state schools are 
+# 1. MIT
+# 2. Princeton
+# 3. Yale
+# 4. Amherst
+# 5. Williams
+```
+
+### Question 9
+
+```{r}
+# Load Data
+df_auto <- read.csv(
+  '../data/Auto.csv',
+  na.strings ='?' 
+) %>% 
+  na.omit('?')
+attach(df_auto)
+mpg2 = df_auto$mpg
+##### AAAAA #####
+# quant preds:
+#   mpg, cylinders, displacement, horsepower, weight, acceleration, year
+# qual preds:
+#   originf, origin, name
+
+##### BBBBB #####
+qualitative_columns <- which(names(df_auto) %in% c("name", "origin", "originf"))
+
+print("RANGE")
+sapply(
+  df_auto[,-qualitative_columns],
+  range
+)
+
+##### CCCCC #####
+print("MEAN")
+sapply(
+  df_auto[,-qualitative_columns],
+  mean
+)
+
+print("SD")
+sapply(
+  df_auto[,-qualitative_columns],
+  sd
+)
+
+
+##### DDDDD #####
+# remove 10th-85th obs
+new_df_auto <- df_auto[-c(10,85),]
+
+print("NEW RANGE")
+sapply(
+  new_df_auto[,-qualitative_columns],
+  range
+)
+
+print("NEW MEAN")
+sapply(
+  new_df_auto[,-qualitative_columns],
+  mean
+)
+
+print("NEW SD")
+sapply(
+  new_df_auto[,-qualitative_columns],
+  sd
+)
+##### EEEEE #####
+plot(df_auto$mpg, df_auto$displacement) # negative trend
+plot(df_auto$mpg, df_auto$acceleration) # slight positive trend
+plot(df_auto$mpg, df_auto$year) # slight positive trend
+plot(df_auto$mpg, df_auto$horsepower) #negative trend
+
+pairs(df_auto[-qualitative_columns])
+
+##### FFFFF #####
+# Looking at the pairs plot it seems that there is a some correlation between mpg and all other variables. Year and Acceleration seem the weakest. 
+```
+
+### Question \# 10
+
+```{r}
+##### AAAAA #####
+# Load Data
+library(
+  ISLR2
+)
+df_Boston <- Boston
+#?Boston
+dim(df_Boston) # 506 rows (suberbs), 13 cols (housing values such as per capita crime, nox conecntration etc.)
+
+##### BBBBB #####
+pairs(df_Boston)
+
+##### CCCCC #####
+# New homes have less crime
+plot(crim ~ age, data= Boston, log = 'xy') 
+##### DDDDD #####
+# Do any of the census tracts of Boston appear to have particularly high crime rates? Tax rates? Pupil-teacher ratios? Comment on the range of each predictor. 
+
+
+##### EEEEE #####
+# How many of the census tracts in this data set bound the Charles river?
+sum(Boston$chas)
+# 35
+
+
+##### FFFFF #####
+# What is the median pupil-teacher ratio among the towns in this data set?
+median(Boston$ptratio)
+# 19.05
+
+##### GGGGG #####
+# Which census tract of Boston has lowest median value of owneroccupied homes? What are the values of the other predictors for that census tract, and how do those values compare to the overall ranges for those predictors? Comment on your findings.
+(lowest_medv = Boston[Boston$medv == min(Boston$medv),])
+
+(obs_398 <- lowest_medv[1, ])
+(obs_405 <- lowest_medv[2, ])
+
+# Find the means of columns
+Boston_means <- colMeans(Boston, na.rm = TRUE)
+
+# Compare the differences between means and observations
+# the census tracts with the lowest median value of owner occupied homes have lower per capita crime , are new homes, have a higher proportion of residential land zoned for lots over 25,000 ft. have a lower proportion of hoemes built before the 1940s.
+(df_obs_399 <- Boston_means - obs_398)
+(df_obs_406 <- Boston_means - obs_405)
+
+# 399 and 406
+
+##### HHHHH #####
+# In this data set, how many of the census tracts average more than seven rooms per dwelling? More than eight rooms per dwelling? Comment on the census tracts that average more than eight rooms per dwelling.
+
+count_rm_gt_7 <- nrow(Boston[Boston$rm > 7, ])
+count_rm_gt_8 <- nrow(Boston[Boston$rm > 8, ])
+
+# Output the counts
+cat("Number of rows where rm > 7:", count_rm_gt_7, "\n")
+cat("Number of rows where rm > 8:", count_rm_gt_8, "\n")
+
+Bos_mean <- colMeans(Boston, na.rm = TRUE)
+greater_8 <- colMeans(Boston[Boston$rm > 8, ], na.rm = TRUE)
+Bos_mean - greater_8
+# in census tracts that average more than eight rooms per dwelling, the median value of owner-occupied homes is $21,000 less expensive than the average. Maybe this neighborhood is mostly  apartments/condos?
+```
